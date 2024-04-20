@@ -10,7 +10,10 @@ type Handler struct {
 	store Storer
 }
 
-type Storer interface{}
+type Storer interface {
+	GetAllowances() ([]Allowances, error)
+	UpdateAllowance(allowance UpdateAllowance, id string) (ReturnAllowance, error)
+}
 
 func New(db Storer) *Handler {
 	return &Handler{store: db}
@@ -45,6 +48,17 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 
 	var finalTaxLevelUpdate = []TaxLevel{}
 
+	var personalAmount float64
+	allowances, err := h.store.GetAllowances()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+	}
+	for _, allowance := range allowances {
+		if allowance.AllowanceType == "Personal" {
+			personalAmount = allowance.Amount
+		}
+	}
+
 	var donationAmount float64
 	var kReceiptAmount float64
 	for _, allowance := range t.Allowances {
@@ -64,8 +78,8 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Err{Message: "k-receipt should be > 0 or less than 100,000 THB"})
 	}
 
-	finalTax := calculateTax(t.TotalIncome, t.Wht, donationAmount, kReceiptAmount)
-	finalTaxLevel := determineTaxLevel(calculateTotalIncome(t.TotalIncome, donationAmount, kReceiptAmount))
+	finalTax := calculateTax(t.TotalIncome, t.Wht, personalAmount, donationAmount, kReceiptAmount)
+	finalTaxLevel := determineTaxLevel(calculateTotalIncome(t.TotalIncome, personalAmount, donationAmount, kReceiptAmount))
 
 	if finalTax >= 0 {
 		for _, tax := range taxLevel {
@@ -84,4 +98,20 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, tax)
+}
+
+func (h *Handler) SetPersonalDeductionHandler(c echo.Context) error {
+	var a UpdateAllowance
+	err := c.Bind(&a)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
+	}
+	id := "1"
+
+	updateAllowance, err := h.store.UpdateAllowance(a, id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, updateAllowance)
 }

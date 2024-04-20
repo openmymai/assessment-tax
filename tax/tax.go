@@ -9,6 +9,7 @@ type TotalIncome struct {
 }
 
 type Allowances struct {
+	ID            int     `json:"id"`
 	AllowanceType string  `json:"allowanceType"`
 	Amount        float64 `json:"amount"`
 }
@@ -23,11 +24,19 @@ type TaxLevel struct {
 	Tax   float64 `json:"tax"`
 }
 
-func calculateTotalIncome(income float64, donation float64, kreceipt float64) float64 {
+type UpdateAllowance struct {
+	Amount float64 `json:"amount"`
+}
+
+type ReturnAllowance struct {
+	PersonalDeduction float64 `json:"personalDeduction"`
+}
+
+func calculateTotalIncome(income float64, personal float64, donation float64, kreceipt float64) float64 {
 	var totalIncome float64
-	privateAllowance := 60000.0
-	if donation >= 0 && kreceipt >= 0 {
-		totalIncome = income - privateAllowance - donation - kreceipt
+
+	if personal >= 0 && donation >= 0 && kreceipt >= 0 {
+		totalIncome = income - personal - donation - kreceipt
 	}
 
 	return totalIncome
@@ -55,8 +64,8 @@ func determineTaxLevel(totalIncome float64) string {
 	}
 }
 
-func calculateTax(income float64, wht float64, donation float64, kreceipt float64) float64 {
-	totalIncome := calculateTotalIncome(income, donation, kreceipt)
+func calculateTax(income float64, wht float64, personal float64, donation float64, kreceipt float64) float64 {
+	totalIncome := calculateTotalIncome(income, personal, donation, kreceipt)
 	if wht < 0 {
 		fmt.Println("Please correct wht")
 	}
