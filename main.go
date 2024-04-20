@@ -28,7 +28,6 @@ func main() {
 	handler := tax.New(p)
 	v1 := e.Group("/api/v1")
 	{
-		v1.GET("/tax/calculations", handler.TaxCalculationsHandler)
 		v1.POST("/tax/calculations", handler.TaxCalculationsHandler)
 	}
 
