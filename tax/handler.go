@@ -38,6 +38,10 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 		}
 	}
 
+	if donationAmount < 0 || donationAmount > 100000 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "Donation should be > 0 or less than 100,000 THB"})
+	}
+
 	tax := Tax{
 		Tax: calculateTax(t.TotalIncome, t.Wht, donationAmount, kReceiptAmount),
 	}
