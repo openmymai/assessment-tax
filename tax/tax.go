@@ -14,7 +14,13 @@ type Allowances struct {
 }
 
 type Tax struct {
-	Tax float64 `json:"tax"`
+	Tax      float64    `json:"tax"`
+	TaxLevel []TaxLevel `json:"taxLevel"`
+}
+
+type TaxLevel struct {
+	Level string  `json:"level"`
+	Tax   float64 `json:"tax"`
 }
 
 func calculateTotalIncome(income float64, donation float64, kreceipt float64) float64 {
@@ -43,7 +49,7 @@ func determineTaxLevel(totalIncome float64) string {
 	} else if totalIncome > 1000000 && totalIncome <= 2000000 {
 		return "1,000,001-2,000,000"
 	} else if totalIncome > 2000000 {
-		return "2,000,000 ขึ้นไป"
+		return "2,000,001 ขึ้นไป"
 	} else {
 		return "None"
 	}
@@ -63,7 +69,7 @@ func calculateTax(income float64, wht float64, donation float64, kreceipt float6
 		return computeTax(totalIncome, 500000.0, 0.15, 50000.0) - wht
 	case "1,000,001-2,000,000":
 		return computeTax(totalIncome, 1000000.0, 0.20, 150000.0) - wht
-	case "2,000,000 ขึ้นไป":
+	case "2,000,001 ขึ้นไป":
 		return computeTax(totalIncome, 2000000.0, 0.35, 400000.0) - wht
 	default:
 		return 0.0

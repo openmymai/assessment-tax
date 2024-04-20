@@ -20,6 +20,10 @@ type Err struct {
 	Message string `json:"message"`
 }
 
+func (t *TaxLevel) updateTax(tax float64) {
+	(*t).Tax = tax
+}
+
 func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 	var t TotalIncome
 	err := c.Bind(&t)
@@ -27,13 +31,27 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
 
+	if t.Wht < 0 || t.Wht > t.TotalIncome {
+		return c.JSON(http.StatusBadRequest, Err{Message: "With Holding Tax should be > 0 or less than your income"})
+	}
+
+	var taxLevel = []TaxLevel{
+		{"0-150,000", 0.0},
+		{"150,001-500,000", 0.0},
+		{"500,001-1,000,000", 0.0},
+		{"1,000,001-2,000,000", 0.0},
+		{"2,000,001 ขึ้นไป", 0.0},
+	}
+
+	var finalTaxLevelUpdate = []TaxLevel{}
+
 	var donationAmount float64
 	var kReceiptAmount float64
 	for _, allowance := range t.Allowances {
 		if allowance.AllowanceType == "donation" {
 			donationAmount = allowance.Amount
 		}
-		if allowance.AllowanceType == "kreceipt" {
+		if allowance.AllowanceType == "k-receipt" {
 			kReceiptAmount = allowance.Amount
 		}
 	}
@@ -42,8 +60,27 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Err{Message: "Donation should be > 0 or less than 100,000 THB"})
 	}
 
+	if kReceiptAmount < 0 || kReceiptAmount > 100000 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "k-receipt should be > 0 or less than 100,000 THB"})
+	}
+
+	finalTax := calculateTax(t.TotalIncome, t.Wht, donationAmount, kReceiptAmount)
+	finalTaxLevel := determineTaxLevel(calculateTotalIncome(t.TotalIncome, donationAmount, kReceiptAmount))
+
+	if finalTax >= 0 {
+		for _, tax := range taxLevel {
+			if tax.Level == finalTaxLevel {
+				tax.updateTax(finalTax)
+				finalTaxLevelUpdate = append(finalTaxLevelUpdate, tax)
+			} else {
+				finalTaxLevelUpdate = append(finalTaxLevelUpdate, tax)
+			}
+		}
+	}
+
 	tax := Tax{
-		Tax: calculateTax(t.TotalIncome, t.Wht, donationAmount, kReceiptAmount),
+		Tax:      finalTax,
+		TaxLevel: finalTaxLevelUpdate,
 	}
 
 	return c.JSON(http.StatusOK, tax)
