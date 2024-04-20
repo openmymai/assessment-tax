@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,10 +16,29 @@ import (
 	"github.com/openmymai/assessment-tax/tax"
 )
 
+type application struct {
+	auth struct {
+		username string
+		password string
+	}
+}
+
 func main() {
 	p, err := postgres.New()
 	if err != nil {
 		panic(err)
+	}
+
+	app := new(application)
+	app.auth.username = os.Getenv("ADMIN_USERNAME")
+	app.auth.password = os.Getenv("ADMIN_PASSWORD")
+
+	if app.auth.username == "" {
+		log.Fatal("Basic auth username must be provided")
+	}
+
+	if app.auth.password == "" {
+		log.Fatal("Basic auth password must be provided")
 	}
 
 	e := echo.New()
@@ -29,6 +49,25 @@ func main() {
 	v1 := e.Group("/api/v1")
 	{
 		v1.POST("/tax/calculations", handler.TaxCalculationsHandler)
+	}
+
+	admin := e.Group("/admin")
+
+	admin.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+		if app.auth.username != "" && app.auth.password != "" {
+			username = app.auth.username
+			password = app.auth.password
+		}
+
+		if username == "adminTax" && password == "admin!" {
+
+			return true, nil
+		}
+
+		return false, nil
+	}))
+	{
+		admin.POST("/deductions/personal", handler.SetPersonalDeductionHandler)
 	}
 
 	go func() {
