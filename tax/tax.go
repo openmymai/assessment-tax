@@ -56,15 +56,15 @@ func calculateTax(income float64, wht float64, donation float64, kreceipt float6
 	}
 	switch determineTaxLevel(totalIncome) {
 	case "0-150,000":
-		return 0.0
+		return 0.0 - wht
 	case "150,001-500,000":
-		return computeTax(totalIncome, 150000.0, 0.10, 0.0)
+		return computeTax(totalIncome, 150000.0, 0.10, 0.0) - wht
 	case "500,001-1,000,000":
-		return computeTax(totalIncome, 500000.0, 0.15, 50000.0)
+		return computeTax(totalIncome, 500000.0, 0.15, 50000.0) - wht
 	case "1,000,001-2,000,000":
-		return computeTax(totalIncome, 1000000.0, 0.20, 150000.0)
+		return computeTax(totalIncome, 1000000.0, 0.20, 150000.0) - wht
 	case "2,000,000 ขึ้นไป":
-		return computeTax(totalIncome, 2000000.0, 0.35, 400000.0)
+		return computeTax(totalIncome, 2000000.0, 0.35, 400000.0) - wht
 	default:
 		return 0.0
 	}
