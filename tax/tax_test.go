@@ -125,6 +125,19 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Greater(t, personalDeduction, 0.0)
 	})
+
+	t.Run("As user, I want to calculate my tax with csv", func(t *testing.T) {
+		body := bytes.NewBufferString(`{}`)
+
+		var tax TaxUpload
+
+		res := request(http.MethodPost, uri("api/v1/tax/calculations/upload-csv"), body)
+		err := res.Decode(&tax)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Greater(t, len(tax.Taxes), 0)
+	})
 }
 
 func uri(paths ...string) string {
