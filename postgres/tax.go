@@ -7,7 +7,6 @@ import (
 )
 
 type Allowances struct {
-	ID            int     `postgres:"id"`
 	AllowanceType string  `postgres:"allowance_type"`
 	Amount        float64 `postgres:"amount"`
 }
@@ -22,12 +21,11 @@ func (p *Postgres) GetAllowances() ([]tax.Allowances, error) {
 	var allowances []tax.Allowances
 	for rows.Next() {
 		var a Allowances
-		err := rows.Scan(&a.ID, &a.AllowanceType, &a.Amount)
+		err := rows.Scan(&a.AllowanceType, &a.Amount)
 		if err != nil {
 			return nil, err
 		}
 		allowances = append(allowances, tax.Allowances{
-			ID:            a.ID,
 			AllowanceType: a.AllowanceType,
 			Amount:        a.Amount,
 		})
@@ -35,16 +33,30 @@ func (p *Postgres) GetAllowances() ([]tax.Allowances, error) {
 	return allowances, nil
 }
 
-func (p *Postgres) UpdateAllowance(a tax.UpdateAllowance, id string) (tax.ReturnAllowance, error) {
+func (p *Postgres) UpdatePersonalAllowance(a tax.UpdateAllowance, allowance_type string) (tax.ReturnAllowance, error) {
 	var updateResult tax.ReturnAllowance
 
-	row := p.Db.QueryRow("UPDATE allowances SET amount = $2 WHERE id = $1 RETURNING amount", id, a.Amount)
-	err := row.Scan(&id)
+	row := p.Db.QueryRow("UPDATE allowances SET amount = $2 WHERE allowance_type = $1 RETURNING amount", allowance_type, a.Amount)
+	err := row.Scan(&allowance_type)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	updateResult.PersonalDeduction = a.Amount
+
+	return updateResult, nil
+}
+
+func (p *Postgres) UpdateKreceiptAllowance(a tax.UpdateAllowance, allowanceType string) (tax.ReturnKreceipt, error) {
+	var updateResult tax.ReturnKreceipt
+
+	row := p.Db.QueryRow("UPDATE allowances SET amount = $2 WHERE allowance_type = $1 RETURNING amount", allowanceType, a.Amount)
+	err := row.Scan(&allowanceType)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	updateResult.Kreceipt = a.Amount
 
 	return updateResult, nil
 }

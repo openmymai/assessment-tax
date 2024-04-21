@@ -1,3 +1,6 @@
+//go:build unit
+// +build unit
+
 package tax
 
 import (
@@ -12,7 +15,7 @@ import (
 )
 
 func TestTaxCalculation(t *testing.T) {
-	t.Run("As user, I want to calculate my tax", func(t *testing.T) {
+	t.Run("Story 1 As user, I want to calculate my tax", func(t *testing.T) {
 		body := bytes.NewBufferString(`{
 			"totalIncome": 500000.0,
 			"wht": 0.0,
@@ -26,7 +29,7 @@ func TestTaxCalculation(t *testing.T) {
 
 		var tax Tax
 
-		res := request(http.MethodPost, uri("api/v1/tax/calculations"), body)
+		res := request(http.MethodPost, uri("tax/calculations"), body)
 		err := res.Decode(&tax)
 
 		assert.Nil(t, err)
@@ -34,7 +37,7 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, tax.Tax, 0.0)
 	})
 
-	t.Run("As user, I want to calculate my tax with WHT", func(t *testing.T) {
+	t.Run("Story 2 As user, I want to calculate my tax with WHT", func(t *testing.T) {
 		body := bytes.NewBufferString(`{
 			"totalIncome": 500000.0,
 			"wht": 25000.0,
@@ -48,7 +51,7 @@ func TestTaxCalculation(t *testing.T) {
 
 		var tax Tax
 
-		res := request(http.MethodPost, uri("api/v1/tax/calculations"), body)
+		res := request(http.MethodPost, uri("tax/calculations"), body)
 		err := res.Decode(&tax)
 
 		assert.Nil(t, err)
@@ -56,7 +59,7 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, tax.Tax, 0.0)
 	})
 
-	t.Run("As user, I want to calculate my tax with Donation", func(t *testing.T) {
+	t.Run("Story 3 As user, I want to calculate my tax with Donation", func(t *testing.T) {
 		body := bytes.NewBufferString(`{
 			"totalIncome": 500000.0,
 			"wht": 0.0,
@@ -70,7 +73,7 @@ func TestTaxCalculation(t *testing.T) {
 
 		var tax Tax
 
-		res := request(http.MethodPost, uri("api/v1/tax/calculations"), body)
+		res := request(http.MethodPost, uri("tax/calculations"), body)
 		err := res.Decode(&tax)
 
 		assert.Nil(t, err)
@@ -78,7 +81,7 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, tax.Tax, 0.0)
 	})
 
-	t.Run("As user, I want to calculate my tax and return detail", func(t *testing.T) {
+	t.Run("Story 4 As user, I want to calculate my tax and return detail", func(t *testing.T) {
 		body := bytes.NewBufferString(`{
 			"totalIncome": 500000.0,
 			"wht": 0.0,
@@ -93,7 +96,7 @@ func TestTaxCalculation(t *testing.T) {
 		var tax Tax
 		var taxAmount float64
 
-		res := request(http.MethodPost, uri("api/v1/tax/calculations"), body)
+		res := request(http.MethodPost, uri("tax/calculations"), body)
 		err := res.Decode(&tax)
 
 		for _, taxLevel := range tax.TaxLevel {
@@ -108,7 +111,7 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, taxAmount, 0.0)
 	})
 
-	t.Run("As admin, I want to setting personal deduction", func(t *testing.T) {
+	t.Run("Story 5 As admin, I want to setting personal deduction", func(t *testing.T) {
 		body := bytes.NewBufferString(`{
 			"amount": 60000.0
 		}`)
@@ -126,12 +129,12 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, personalDeduction, 0.0)
 	})
 
-	t.Run("As user, I want to calculate my tax with csv", func(t *testing.T) {
+	t.Run("Story 6 As user, I want to calculate my tax with csv", func(t *testing.T) {
 		body := bytes.NewBufferString(`{}`)
 
 		var tax TaxUpload
 
-		res := request(http.MethodPost, uri("api/v1/tax/calculations/upload-csv"), body)
+		res := request(http.MethodPost, uri("tax/calculations/upload-csv"), body)
 		err := res.Decode(&tax)
 
 		assert.Nil(t, err)
@@ -139,7 +142,7 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, len(tax.Taxes), 0)
 	})
 
-	t.Run("As user, I want to calculate my tax with tax level detail", func(t *testing.T) {
+	t.Run("Story 7 As user, I want to calculate my tax with tax level detail", func(t *testing.T) {
 		body := bytes.NewBufferString(`{
 			"totalIncome": 500000.0,
 			"wht": 0.0,
@@ -158,7 +161,7 @@ func TestTaxCalculation(t *testing.T) {
 		var tax Tax
 		var taxAmount float64
 
-		res := request(http.MethodPost, uri("api/v1/tax/calculations"), body)
+		res := request(http.MethodPost, uri("tax/calculations"), body)
 		err := res.Decode(&tax)
 
 		for _, taxLevel := range tax.TaxLevel {
@@ -172,6 +175,25 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, tax.Tax, 0.0)
 		assert.Greater(t, taxAmount, 0.0)
 	})
+
+	t.Run("Story 8 As admin, I want to setting k-receipt deduction", func(t *testing.T) {
+		body := bytes.NewBufferString(`{
+			"amount": 80000.0
+		}`)
+
+		var kreceipt ReturnKreceipt
+		var kreceiptDeduction float64
+
+		res := adminrequest(http.MethodPost, uri("admin/deductions/k-receipt"), body)
+		err := res.Decode(&kreceipt)
+
+		kreceiptDeduction = kreceipt.Kreceipt
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Greater(t, kreceiptDeduction, 0.0)
+	})
+
 }
 
 func uri(paths ...string) string {

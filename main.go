@@ -46,10 +46,10 @@ func main() {
 	e.Use(middleware.Recover())
 
 	handler := tax.New(p)
-	v1 := e.Group("/api/v1")
+	v1 := e.Group("/tax")
 	{
-		v1.POST("/tax/calculations", handler.TaxCalculationsHandler)
-		v1.POST("/tax/calculations/upload-csv", handler.TaxCalculationsCSVHandler)
+		v1.POST("/calculations", handler.TaxCalculationsHandler)
+		v1.POST("/calculations/upload-csv", handler.TaxCalculationsCSVHandler)
 	}
 
 	admin := e.Group("/admin")
@@ -69,6 +69,7 @@ func main() {
 	}))
 	{
 		admin.POST("/deductions/personal", handler.SetPersonalDeductionHandler)
+		admin.POST("/deductions/k-receipt", handler.SetKreceiptDeductionHandler)
 	}
 
 	go func() {
