@@ -138,6 +138,40 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Greater(t, len(tax.Taxes), 0)
 	})
+
+	t.Run("As user, I want to calculate my tax with tax level detail", func(t *testing.T) {
+		body := bytes.NewBufferString(`{
+			"totalIncome": 500000.0,
+			"wht": 0.0,
+			"allowances": [
+				{
+					"allowanceType": "k-receipt",
+					"amount": 50000.0
+				},
+				{
+					"allowanceType": "donation",
+					"amount": 100000.0
+				}
+			]
+		}`)
+
+		var tax Tax
+		var taxAmount float64
+
+		res := request(http.MethodPost, uri("api/v1/tax/calculations"), body)
+		err := res.Decode(&tax)
+
+		for _, taxLevel := range tax.TaxLevel {
+			if taxLevel.Level == "150,001-500,000" {
+				taxAmount = taxLevel.Tax
+			}
+		}
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Greater(t, tax.Tax, 0.0)
+		assert.Greater(t, taxAmount, 0.0)
+	})
 }
 
 func uri(paths ...string) string {
