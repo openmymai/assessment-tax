@@ -90,6 +90,9 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 
 	finalTax := calculateTax(t.TotalIncome, t.Wht, personalAmount, donationAmount, kReceiptAmount)
 	finalTaxLevel := determineTaxLevel(calculateTotalIncome(t.TotalIncome, personalAmount, donationAmount, kReceiptAmount))
+	fmt.Println(finalTax)
+
+	var taxRefund TaxRefund
 
 	if finalTax >= 0 {
 		for _, tax := range taxLevel {
@@ -100,14 +103,15 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 				finalTaxLevelUpdate = append(finalTaxLevelUpdate, tax)
 			}
 		}
+		tax := Tax{
+			Tax:      finalTax,
+			TaxLevel: finalTaxLevelUpdate,
+		}
+		return c.JSON(http.StatusOK, tax)
+	} else {
+		taxRefund.TaxRefund = finalTax
+		return c.JSON(http.StatusOK, taxRefund)
 	}
-
-	tax := Tax{
-		Tax:      finalTax,
-		TaxLevel: finalTaxLevelUpdate,
-	}
-
-	return c.JSON(http.StatusOK, tax)
 }
 
 func (h *Handler) SetPersonalDeductionHandler(c echo.Context) error {
