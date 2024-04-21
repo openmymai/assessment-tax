@@ -49,6 +49,7 @@ func main() {
 	v1 := e.Group("/api/v1")
 	{
 		v1.POST("/tax/calculations", handler.TaxCalculationsHandler)
+		v1.POST("/tax/calculations/upload-csv", handler.TaxCalculationsCSVHandler)
 	}
 
 	admin := e.Group("/admin")

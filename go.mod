@@ -3,6 +3,7 @@ module github.com/openmymai/assessment-tax
 go 1.21.9
 
 require (
+	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.8.4

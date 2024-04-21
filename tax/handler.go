@@ -115,3 +115,51 @@ func (h *Handler) SetPersonalDeductionHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, updateAllowance)
 }
+
+func (h *Handler) TaxCalculationsCSVHandler(c echo.Context) error {
+	tax := taxFromFile("taxes.csv")
+	var finaltaxcsv []TaxCSV
+	var taxCsv TaxCSV
+
+	for _, t := range tax {
+		if t.Wht < 0 || t.Wht > t.TotalIncome {
+			return c.JSON(http.StatusBadRequest, Err{Message: "With Holding Tax should be > 0 or less than your income"})
+		}
+
+		var personalAmount float64
+		allowances, err := h.store.GetAllowances()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+		for _, allowance := range allowances {
+			if allowance.AllowanceType == "Personal" {
+				personalAmount = allowance.Amount
+			}
+		}
+
+		donationAmount := t.Donation
+		kReceiptAmount := 0.0
+
+		if donationAmount < 0 || donationAmount > 100000 {
+			return c.JSON(http.StatusBadRequest, Err{Message: "Donation should be > 0 or less than 100,000 THB"})
+		}
+
+		finalTax := calculateTax(t.TotalIncome, t.Wht, personalAmount, donationAmount, kReceiptAmount)
+
+		if finalTax >= 0 {
+			taxCsv = TaxCSV{
+				TotalIncome: t.TotalIncome,
+				Tax:         finalTax,
+			}
+		}
+
+		finaltaxcsv = append(finaltaxcsv, taxCsv)
+
+	}
+
+	taxOutput := TaxUpload{
+		Taxes: finaltaxcsv,
+	}
+
+	return c.JSON(http.StatusOK, taxOutput)
+}

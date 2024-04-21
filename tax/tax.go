@@ -1,17 +1,23 @@
 package tax
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/gocarina/gocsv"
+)
 
 type TotalIncome struct {
-	TotalIncome float64      `json:"totalIncome"`
-	Wht         float64      `json:"wht"`
-	Allowances  []Allowances `json:"allowances"`
+	TotalIncome float64      `json:"totalIncome" csv:"totalIncome"`
+	Wht         float64      `json:"wht" csv:"wht"`
+	Allowances  []Allowances `json:"allowances" csv:"allowances"`
 }
 
 type Allowances struct {
 	ID            int     `json:"id"`
-	AllowanceType string  `json:"allowanceType"`
-	Amount        float64 `json:"amount"`
+	AllowanceType string  `json:"allowanceType" csv:"allowanceTypes"`
+	Amount        float64 `json:"amount" csv:"amount"`
 }
 
 type Tax struct {
@@ -30,6 +36,21 @@ type UpdateAllowance struct {
 
 type ReturnAllowance struct {
 	PersonalDeduction float64 `json:"personalDeduction"`
+}
+
+type TotalIncomeCsv struct {
+	TotalIncome float64 `csv:"totalIncome"`
+	Wht         float64 `csv:"wht"`
+	Donation    float64 `csv:"donation"`
+}
+
+type TaxUpload struct {
+	Taxes []TaxCSV `json:"taxes"`
+}
+
+type TaxCSV struct {
+	TotalIncome float64 `json:"totalIncome"`
+	Tax         float64 `json:"tax"`
 }
 
 func calculateTotalIncome(income float64, personal float64, donation float64, kreceipt float64) float64 {
@@ -83,4 +104,19 @@ func calculateTax(income float64, wht float64, personal float64, donation float6
 	default:
 		return 0.0
 	}
+}
+
+func taxFromFile(filename string) []TotalIncomeCsv {
+	file, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	var totalIncomeCsv []TotalIncomeCsv
+	if err := gocsv.UnmarshalFile(file, &totalIncomeCsv); err != nil {
+		log.Fatal(err)
+	}
+
+	return totalIncomeCsv
 }
