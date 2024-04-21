@@ -1,6 +1,7 @@
 package tax
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -12,7 +13,8 @@ type Handler struct {
 
 type Storer interface {
 	GetAllowances() ([]Allowances, error)
-	UpdateAllowance(allowance UpdateAllowance, id string) (ReturnAllowance, error)
+	UpdatePersonalAllowance(allowance UpdateAllowance, id string) (ReturnAllowance, error)
+	UpdateKreceiptAllowance(allowance UpdateAllowance, allowance_type string) (ReturnKreceipt, error)
 }
 
 func New(db Storer) *Handler {
@@ -49,6 +51,7 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 	var finalTaxLevelUpdate = []TaxLevel{}
 
 	var personalAmount float64
+	var kReceiptMax float64
 	allowances, err := h.store.GetAllowances()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
@@ -56,6 +59,9 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 	for _, allowance := range allowances {
 		if allowance.AllowanceType == "Personal" {
 			personalAmount = allowance.Amount
+		}
+		if allowance.AllowanceType == "Kreceipt" {
+			kReceiptMax = allowance.Amount
 		}
 	}
 
@@ -66,6 +72,10 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 			donationAmount = allowance.Amount
 		}
 		if allowance.AllowanceType == "k-receipt" {
+			if allowance.Amount < 0 || allowance.Amount > kReceiptMax {
+				Kresponse := fmt.Sprintf("K-Receipt Maximum should not more than %.2f", kReceiptMax)
+				return c.JSON(http.StatusBadRequest, Err{Message: Kresponse})
+			}
 			kReceiptAmount = allowance.Amount
 		}
 	}
@@ -106,9 +116,33 @@ func (h *Handler) SetPersonalDeductionHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
-	id := "1"
+	allowance_type := "Personal"
 
-	updateAllowance, err := h.store.UpdateAllowance(a, id)
+	if a.Amount < 10000 || a.Amount > 100000 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "Please set Personal Allowance range 10,000 - 100,000 THB"})
+	}
+
+	updateAllowance, err := h.store.UpdatePersonalAllowance(a, allowance_type)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, updateAllowance)
+}
+
+func (h *Handler) SetKreceiptDeductionHandler(c echo.Context) error {
+	var a UpdateAllowance
+	err := c.Bind(&a)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
+	}
+	allowanceType := "Kreceipt"
+
+	if a.Amount < 0 || a.Amount > 100000 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "K-Receipt Allowance Maximum setting is 100,000 THB"})
+	}
+
+	updateAllowance, err := h.store.UpdateKreceiptAllowance(a, allowanceType)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
 	}

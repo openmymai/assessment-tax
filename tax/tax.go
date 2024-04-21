@@ -15,7 +15,6 @@ type TotalIncome struct {
 }
 
 type Allowances struct {
-	ID            int     `json:"id"`
 	AllowanceType string  `json:"allowanceType" csv:"allowanceTypes"`
 	Amount        float64 `json:"amount" csv:"amount"`
 }
@@ -36,6 +35,10 @@ type UpdateAllowance struct {
 
 type ReturnAllowance struct {
 	PersonalDeduction float64 `json:"personalDeduction"`
+}
+
+type ReturnKreceipt struct {
+	Kreceipt float64 `json:"kReceipt"`
 }
 
 type TotalIncomeCsv struct {
