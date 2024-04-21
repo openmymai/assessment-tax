@@ -56,6 +56,10 @@ type TaxCSV struct {
 	Tax         float64 `json:"tax"`
 }
 
+type TaxRefund struct {
+	TaxRefund float64 `json:"taxRefund"`
+}
+
 func calculateTotalIncome(income float64, personal float64, donation float64, kreceipt float64) float64 {
 	var totalIncome float64
 
@@ -105,7 +109,7 @@ func calculateTax(income float64, wht float64, personal float64, donation float6
 	case "2,000,001 ขึ้นไป":
 		return computeTax(totalIncome, 2000000.0, 0.35, 400000.0) - wht
 	default:
-		return 0.0
+		return 0.0 - wht
 	}
 }
 

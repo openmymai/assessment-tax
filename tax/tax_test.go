@@ -194,6 +194,27 @@ func TestTaxCalculation(t *testing.T) {
 		assert.Greater(t, kreceiptDeduction, 0.0)
 	})
 
+	t.Run("Tax Refund", func(t *testing.T) {
+		body := bytes.NewBufferString(`{
+			"totalIncome": 500000.0,
+			"wht": 30000.0,
+			"allowances": [
+				{
+					"allowanceType": "donation",
+					"amount": 10000.0
+				}
+			]
+		}`)
+
+		var tax TaxRefund
+
+		res := request(http.MethodPost, uri("tax/calculations"), body)
+		err := res.Decode(&tax)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Less(t, tax.TaxRefund, 0.0)
+	})
 }
 
 func uri(paths ...string) string {
