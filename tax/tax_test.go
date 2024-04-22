@@ -218,7 +218,7 @@ func TestTaxCalculation(t *testing.T) {
 }
 
 func uri(paths ...string) string {
-	host := "http://localhost:8080"
+	host := "http://172.20.10.2:8080"
 	if paths == nil {
 		return host
 	}

@@ -1,17 +1,39 @@
-version: '3'
+version: '3.8'
 
 services:
+  # tax:
+  #   depends_on:
+  #     - postgres
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: tax
+  #   hostname: tax
+  #   networks:
+  #     - mynet
+  #   ports:
+  #     - 8080:8080
+  #   deploy:
+  #     restart_policy:
+  #       condition: on-failure
   postgres:
     image: postgres:16
+    container_name: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ktaxes
     restart: on-failure
+    hostname: postgres
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - '5432:5432'
+      - 5432:5432
+    # networks:
+    #   - mynet
 
 volumes:
   pgdata:
+# networks:
+#   mynet:
+#     driver: bridge

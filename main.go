@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,18 +28,6 @@ func main() {
 		panic(err)
 	}
 
-	app := new(application)
-	app.auth.username = os.Getenv("ADMIN_USERNAME")
-	app.auth.password = os.Getenv("ADMIN_PASSWORD")
-
-	if app.auth.username == "" {
-		log.Fatal("Basic auth username must be provided")
-	}
-
-	if app.auth.password == "" {
-		log.Fatal("Basic auth password must be provided")
-	}
-
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -53,15 +40,8 @@ func main() {
 	}
 
 	admin := e.Group("/admin")
-
-	admin.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-		if app.auth.username != "" && app.auth.password != "" {
-			username = app.auth.username
-			password = app.auth.password
-		}
-
+	admin.Use(middleware.BasicAuth(func(username string, password string, c echo.Context) (bool, error) {
 		if username == "adminTax" && password == "admin!" {
-
 			return true, nil
 		}
 
@@ -73,7 +53,7 @@ func main() {
 	}
 
 	go func() {
-		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(":" + os.Getenv("PORT")); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()
@@ -82,7 +62,7 @@ func main() {
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 	<-shutdown
 
-	fmt.Println("shutting down...")
+	fmt.Println("shutting down the server")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
