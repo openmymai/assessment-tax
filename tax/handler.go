@@ -90,7 +90,6 @@ func (h *Handler) TaxCalculationsHandler(c echo.Context) error {
 
 	finalTax := calculateTax(t.TotalIncome, t.Wht, personalAmount, donationAmount, kReceiptAmount)
 	finalTaxLevel := determineTaxLevel(calculateTotalIncome(t.TotalIncome, personalAmount, donationAmount, kReceiptAmount))
-	fmt.Println(finalTax)
 
 	var taxRefund TaxRefund
 

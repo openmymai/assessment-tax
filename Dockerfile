@@ -1,25 +1,26 @@
-FROM golang:1.22.2-alpine as build-base
-
-ARG DATABASE_URL
+FROM golang:1.22 as build-stage
 
 WORKDIR /app
 
-COPY go.mod .
-
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 go test -tags=unit -v ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -o /tax
 
-RUN go build -o ./out/assessment .
-
+FROM build-stage AS run-test-stage
+RUN go test -tags=unit -v ./...
 
 ### ------------
 
-FROM alpine:3.19
-COPY --from=build-base /app/out/assessment /app/assessment
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
-ENV DATABASE_URL=postgres://postgres:postgres@localhost:5432/ktaxes?sslmode=disable
+WORKDIR /
 
-CMD ["/app/assessment"]
+COPY --from=build-stage /tax /tax
+
+EXPOSE 8080
+
+USER nonroot:nonroot
+ENTRYPOINT ["/tax"]
